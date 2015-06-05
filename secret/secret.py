@@ -223,7 +223,7 @@ def main():
     p.add_argument("--version", default=None)
     p.add_argument("--region", help="AWS region", default="us-east-1")
     p.add_argument("--vaultkey", help="Name of KMS key", default="alias/vault")
-    p.add_argument("--vault", help="Name of vault (eg. S3 bucket)", default="vault-test")
+    p.add_argument("--vault", help="Name of vault (eg. S3 bucket)", default="secret")
     p.add_argument("--project", help="Name of project (eg. S3 'folder')", default=None)
     p.add_argument("--env", help="Environment namespace for keys", default='default')
     p.add_argument("--datafile", default=DATAFILE)

@@ -2,9 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='secret',
-    version='0.4.1',
+    version='0.4.2',
     description='Manage secrets',
     keywords = 'secret secrets project vault',
+    author = 'Jussi Vaihia',
+    author_email = 'jussi.vaihia@futurice.com',
     license='Apache2',
     url='https://github.com/futurice/secret',
     classifiers=[
@@ -17,7 +19,7 @@ setup(
     include_package_data = True,
     entry_points={
         'console_scripts': [
-            'secret = secret.secret:main'
+            'secret = secret.secret:runner'
             ]
         }
 )

@@ -261,6 +261,9 @@ def main():
         for k,v in result.items():
             print(k,'=',v)
 
-if __name__ == '__main__':
+def runner():
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
+
+if __name__ == '__main__':
+    runner()

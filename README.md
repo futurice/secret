@@ -8,7 +8,7 @@ Manage secrets.
 * Login to Amazon AWS: https://console.aws.amazon.com/iam/home
 * In IAM, create a (KMS) Encryption Key called 'secret'
 * In S3, create a bucket called 'secret'
-** Enable Versioning, and set a Lifecycle policy
+ * Enable Versioning, and set a Lifecycle policy
 
 Use ~/.boto, ~/.aws/credentials profiles (http://boto.readthedocs.org/en/latest/boto_config_tut.html):
 ```$ AWS_PROFILE=profile secret```

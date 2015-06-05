@@ -6,7 +6,7 @@ Manage secrets.
 
 * `pip install secret`
 * Login to Amazon AWS: https://console.aws.amazon.com/iam/home
-* In IAM, create a (KMS) Encryption Key called 'alias/secret'
+* In IAM, create a (KMS) Encryption Key called 'secret'
 * In S3, create a bucket called 'secret'
 ** Enable Versioning, and set a Lifecycle policy
 
@@ -24,6 +24,7 @@ $ secret
 
 ## Usage
 ```
+$ secret setup --vault secret --project helloworld # project configuration created, stored to .secret
 $ secret list
 $ secret put hello world
 $ secret put ssh_key "`cat ~/.ssh/id_rsa`"

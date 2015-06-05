@@ -2,8 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='secret',
-    version='0.4',
+    version='0.4.1',
     description='Manage secrets',
+    keywords = 'secret secrets project vault',
     license='Apache2',
     url='https://github.com/futurice/secret',
     classifiers=[
@@ -12,9 +13,11 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
     ],
     install_requires=['boto3>=0.0.18', 'pycryptodome>=3.1'],
+    packages = ["secret"],
+    include_package_data = True,
     entry_points={
         'console_scripts': [
-            'secret = secret:main'
+            'secret = secret.secret:main'
             ]
         }
 )

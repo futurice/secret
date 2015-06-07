@@ -27,16 +27,16 @@ $ secret
 
 ## Usage
 
-Create one-time project configuration (stored in .secret):
+Initialize a new project (configuration stored in .secret). The used vault corresponds to S3 bucket name:
 ```
 $ secret setup --vault secret --project helloworld
 ```
 
-Use:
+Commands:
 ```
 $ secret list
 $ secret put hello world
-$ secret put ssh_key "`cat ~/.ssh/id_rsa`"
+$ secret put ssh_key ~/.ssh/id_rsa
 $ secret get ssh_key
 $ secret config
 $ secret delete ssh_key

@@ -17,6 +17,7 @@ from Crypto.Random import get_random_bytes
 ENCODING = 'utf-8'
 DATAFILE = '.secret'
 BOTO_DEFAULT = ''
+ALIASES = {'ls':'list',}
 
 class Project:
     def __init__(self, name=DATAFILE):
@@ -97,6 +98,8 @@ class S3(Storage):
     @asyncio.coroutine
     def put(self, key, value, **kw):
         key = self.prefixify(key)
+        if os.path.isfile(value):
+            value = open(os.path.expandvars(os.path.expanduser(value)), 'r').read()
         data = self.vault.encrypt(value.encode(ENCODING))
         data['name'] = key
         return self.client.put_object(Bucket=self.bucket, Key=key, Body=json.dumps(data))
@@ -229,6 +232,7 @@ def main():
     p.add_argument("--datafile", default=DATAFILE)
     p.add_argument("--debug", default=None)
     args = p.parse_args()
+    args.action = ALIASES.get(args.action, args.action)
 
     if args.debug:
         boto3.set_stream_logger(name='botocore')
@@ -241,6 +245,7 @@ def main():
             aws_session_token=os.getenv('AWS_SESSION_TOKEN'),)
 
     project = Project()
+
     if args.action != 'setup':
         args.vault = project.load().get('vault')
         args.project = project.load().get('project')

@@ -28,7 +28,8 @@ $ secret
 ## Usage
 
 Create one-time project configuration (stored in .secret):
-```$ secret setup --vault secret --project helloworld```
+```
+$ secret setup --vault secret --project helloworld```
 
 Use:
 ```

@@ -16,6 +16,7 @@ from Crypto.Random import get_random_bytes
 
 ENCODING = 'utf-8'
 DATAFILE = '.secret'
+BOTO_DEFAULT = ''
 
 class Project:
     def __init__(self, name=DATAFILE):
@@ -75,16 +76,20 @@ class S3(Storage):
         return res
 
     @asyncio.coroutine
-    def list(self, prefix=None, **kw):
+    def list_backend(self, prefix=None, **kw):
         if not prefix:
             prefix = self.prefix + self.env
-        response = self.client.list_objects(Bucket=self.bucket, Prefix=prefix, MaxKeys=1000)
-        contents = response.get('Contents', [])
-        return contents
+        return self.client.list_objects(Bucket=self.bucket, Prefix=prefix, MaxKeys=1000, Delimiter=kw.get('delimiter', BOTO_DEFAULT))
+
+    @asyncio.coroutine
+    def list(self, prefix=None, **kw):
+        response = yield from self.list_backend(prefix=prefix, **kw)
+        return [self.prefixify(k['Key'], reverse=True) for k in response.get('Contents', [])]
 
     @asyncio.coroutine
     def config(self, **kw):
-        contents = yield from self.list()
+        contents = yield from self.list_backend()
+        contents = contents.get('Contents', [])
         tasks = [self.get(obj['Key']) for obj in contents]
         results = yield from asyncio.gather(*tasks)
         return dict(zip([self.prefixify(k['Key'], reverse=True) for k in contents], results))
@@ -123,13 +128,8 @@ class S3(Storage):
 
     @asyncio.coroutine
     def envs(self, **kw):
-        # NOTE: gets ALL keys, to list envs; storing envs separately would be more efficient
-        keys = yield from self.list(prefix=self.prefix)
-        r = set()
-        for k in keys:
-            name = k['Key'].split('/')[1]
-            r.add(name)
-        return list(r)
+        contents = yield from self.list_backend(prefix=self.prefix, delimiter='/')
+        return list(k['Prefix'].split('/')[1] for k in contents.get('CommonPrefixes', []))
 
     def prefixify(self, key, reverse=False):
         if reverse:
@@ -253,7 +253,7 @@ def main():
 
     method = getattr(storage, args.action)
     result = yield from method(**vars(args))
-    if isinstance(result, list):
+    if any(isinstance(result, k) for k in [list]):
         pp(result)
     elif isinstance(result, str):
         print(result)

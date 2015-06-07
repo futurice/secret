@@ -2,6 +2,9 @@
 
 Manage secrets.
 
+Secret provides a Python 3.4+ interface for a secure solution to store secrets backed by Amazon services:
+notably IAM for access policies, KMS for encryption keys and S3 for storage.
+
 ## Setup
 
 * `pip install secret`
@@ -23,8 +26,12 @@ $ secret
 ```
 
 ## Usage
+
+Create one-time project configuration (stored in .secret):
+```$ secret setup --vault secret --project helloworld```
+
+Use:
 ```
-$ secret setup --vault secret --project helloworld # project configuration created, stored to .secret
 $ secret list
 $ secret put hello world
 $ secret put ssh_key "`cat ~/.ssh/id_rsa`"

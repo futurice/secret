@@ -10,6 +10,7 @@ notably IAM for access policies, KMS for encryption keys and S3 for storage.
 * `pip install secret`
 * Login to Amazon AWS: https://console.aws.amazon.com/iam/home
 * In IAM, create a (KMS) Encryption Key called 'secret'
+ * Check that Region Filter is set to the region S3 will use
 * In S3, create a bucket called 'secret'
  * Enable Versioning, and set a Lifecycle policy
 
@@ -21,7 +22,7 @@ or ENV variables:
 export AWS_ACCESS_KEY_ID=
 export AWS_SECRET_ACCESS_KEY=
 export AWS_SESSION_TOKEN=
-export AWS_DEFAULT_REGION="us-east-1"
+export AWS_DEFAULT_REGION=
 $ secret
 ```
 

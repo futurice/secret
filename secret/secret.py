@@ -183,7 +183,7 @@ def tob64(value):
     return b64encode(value).decode(ENCODING)
 
 class Kms(Vault):
-    def __init__(self, session, key="alias/vault"):
+    def __init__(self, session, key="alias/secret"):
         self.client = session.client('kms')
         self.key = key
         self.cipher = AesEax
@@ -225,7 +225,7 @@ def main():
     p.add_argument("value", nargs="?", default=None)
     p.add_argument("--version", default=None)
     p.add_argument("--region", help="AWS region", default="us-east-1")
-    p.add_argument("--vaultkey", help="Name of KMS key", default="alias/vault")
+    p.add_argument("--vaultkey", help="Name of KMS key", default="alias/secret")
     p.add_argument("--vault", help="Name of vault (eg. S3 bucket)", default="secret")
     p.add_argument("--project", help="Name of project (eg. S3 'folder')", default=None)
     p.add_argument("--env", help="Environment namespace for keys", default='default')

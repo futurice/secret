@@ -6,8 +6,11 @@ from collections import Iterable
 from pprint import pprint as pp
 from base64 import b64encode, b64decode
 import json
-import asyncio
 import boto3
+
+import six
+import trollius as asyncio
+from trollius import From, Return
 
 from Crypto.Cipher import AES
 from Crypto.Hash.HMAC import HMAC
@@ -61,39 +64,39 @@ class S3(Storage):
         # administrator creates bucket for projects
         name = name or self.bucket
         result = self.client.create_bucket(Bucket=name)
-        return result
+        raise Return(result)
 
     @asyncio.coroutine
     def setup(self, vault, project, **kw):
         # project-user creates a folder inside bucket
         assert all([vault, project])
         try:
-            result = yield from self.get(project)
+            result = yield From(self.get(project))
             res = "Project with this name already exists"
         except:
-            result = yield from self.put(project, '')
+            result = yield From(self.put(project, ''))
             self.project.save(dict(vault=vault, project=project))
             res = "Saved settings to %s"%self.project.name
-        return res
+        raise Return(res)
 
     @asyncio.coroutine
     def list_backend(self, prefix=None, **kw):
         if not prefix:
             prefix = self.prefix + self.env
-        return self.client.list_objects(Bucket=self.bucket, Prefix=prefix, MaxKeys=1000, Delimiter=kw.get('delimiter', BOTO_DEFAULT))
+        raise Return(self.client.list_objects(Bucket=self.bucket, Prefix=prefix, MaxKeys=1000, Delimiter=kw.get('delimiter', BOTO_DEFAULT)))
 
     @asyncio.coroutine
     def list(self, prefix=None, **kw):
-        response = yield from self.list_backend(prefix=prefix, **kw)
-        return [self.prefixify(k['Key'], reverse=True) for k in response.get('Contents', [])]
+        response = yield From(self.list_backend(prefix=prefix, **kw))
+        raise Return([self.prefixify(k['Key'], reverse=True) for k in response.get('Contents', [])])
 
     @asyncio.coroutine
     def config(self, **kw):
-        contents = yield from self.list_backend()
+        contents = yield From(self.list_backend())
         contents = contents.get('Contents', [])
         tasks = [self.get(obj['Key']) for obj in contents]
-        results = yield from asyncio.gather(*tasks)
-        return dict(zip([self.prefixify(k['Key'], reverse=True) for k in contents], results))
+        results = yield From(asyncio.gather(*tasks))
+        raise Return(dict(zip([self.prefixify(k['Key'], reverse=True) for k in contents], results)))
 
     @asyncio.coroutine
     def put(self, key, value, **kw):
@@ -102,7 +105,7 @@ class S3(Storage):
             value = open(os.path.expandvars(os.path.expanduser(value)), 'r').read()
         data = self.vault.encrypt(value.encode(ENCODING))
         data['name'] = key
-        return self.client.put_object(Bucket=self.bucket, Key=key, Body=json.dumps(data))
+        raise Return(self.client.put_object(Bucket=self.bucket, Key=key, Body=json.dumps(data)))
 
     @asyncio.coroutine
     def get(self, key, **kw):
@@ -111,12 +114,12 @@ class S3(Storage):
         if kw.get('version'):
             extra['VersionId'] = kw.get('version')
         res = self.client.get_object(Bucket=self.bucket, Key=key, **extra)
-        return self.vault.decrypt(json.loads(res['Body'].read().decode(ENCODING))).decode(ENCODING)
+        raise Return(self.vault.decrypt(json.loads(res['Body'].read().decode(ENCODING))).decode(ENCODING))
 
     @asyncio.coroutine
     def delete(self, key, **kw):
         key = self.prefixify(key)
-        return self.client.delete_object(Bucket=self.bucket, Key=key)
+        raise Return(self.client.delete_object(Bucket=self.bucket, Key=key))
 
     @asyncio.coroutine
     def versions(self, **kw):
@@ -127,19 +130,19 @@ class S3(Storage):
             key = self.prefixify(k['Key'], reverse=True)
             if kw.get('key') and kw.get('key')!=key: continue
             versions.append(dict(key=key, version=k['VersionId'], is_latest=k['IsLatest'], modified=k['LastModified']))
-        return versions
+        raise Return(versions)
 
     @asyncio.coroutine
     def envs(self, **kw):
-        contents = yield from self.list_backend(prefix=self.prefix, delimiter='/')
-        return list(k['Prefix'].split('/')[1] for k in contents.get('CommonPrefixes', []))
+        contents = yield From(self.list_backend(prefix=self.prefix, delimiter='/'))
+        raise Return(list(k['Prefix'].split('/')[1] for k in contents.get('CommonPrefixes', [])))
 
     def prefixify(self, key, reverse=False):
         if reverse:
             key = key.replace('{}{}'.format(self.prefix, self.env), '')
         elif self.prefix not in key:
             key = '{}{}{}'.format(self.prefix, self.env, key)
-        return key
+        raise Return(key)
 
 class Vault:
     def encrypt(self, value, **kw): pass
@@ -259,13 +262,13 @@ def main():
     storage = S3(session=session, vault=args.vault, vaultkey=args.vaultkey, env=args.env)
 
     method = getattr(storage, args.action)
-    result = yield from method(**vars(args))
+    result = yield From(method(**vars(args)))
     if any(isinstance(result, k) for k in [list]):
         pp(result)
     elif isinstance(result, str):
         print(result)
     else:
-        for k,v in result.items():
+        for k,v in six.iteritems(result):
             print(k,'=',v)
 
 def runner():

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import argparse
-import os, sys, types
+import os, sys
 from collections import Iterable
 
 from pprint import pprint as pp

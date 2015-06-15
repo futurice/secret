@@ -263,9 +263,14 @@ def main():
 
     method = getattr(storage, args.action)
     result = yield From(method(**vars(args)))
+    def is_str(result):
+        try:
+            return isinstance(result, basestring)
+        except NameError:
+            return isinstance(result, str)
     if any(isinstance(result, k) for k in [list]):
         pp(result)
-    elif isinstance(result, types.StringTypes):
+    elif is_str(result):
         print(result)
     else:
         for k,v in six.iteritems(result):

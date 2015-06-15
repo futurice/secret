@@ -231,11 +231,9 @@ def main():
     p.add_argument("--env", help="Environment namespace for keys", default='default')
     p.add_argument("--datafile", default=DATAFILE)
     p.add_argument("--debug", default=None)
+    p.add_argument("--status", default=1)
     args = p.parse_args()
     args.action = ALIASES.get(args.action, args.action)
-
-    if args.debug:
-        boto3.set_stream_logger(name='botocore')
 
     region = os.getenv("AWS_DEFAULT_REGION", args.region)
     kw = {}
@@ -251,7 +249,11 @@ def main():
         args.project = project.load().get('project')
         assert all([args.vault, args.project])
 
-    print("VAULT: {} PROJECT: {} ENV: {} (configs: {})".format(args.vault, args.project, args.env, args.datafile))
+    if args.debug:
+        boto3.set_stream_logger(name='botocore')
+
+    if bool(int(args.status)) if args.status else args.status:
+        print("VAULT: {} PROJECT: {} ENV: {} (configs: {})".format(args.vault, args.project, args.env, args.datafile))
 
     session = boto3.session.Session(region_name=region, **kw)
     storage = S3(session=session, vault=args.vault, vaultkey=args.vaultkey, env=args.env)

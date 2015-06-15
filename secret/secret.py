@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import argparse
-import os, sys
+import os, sys, types
 from collections import Iterable
 
 from pprint import pprint as pp
@@ -142,7 +142,7 @@ class S3(Storage):
             key = key.replace('{}{}'.format(self.prefix, self.env), '')
         elif self.prefix not in key:
             key = '{}{}{}'.format(self.prefix, self.env, key)
-        raise Return(key)
+        return key
 
 class Vault:
     def encrypt(self, value, **kw): pass
@@ -265,7 +265,7 @@ def main():
     result = yield From(method(**vars(args)))
     if any(isinstance(result, k) for k in [list]):
         pp(result)
-    elif isinstance(result, str):
+    elif isinstance(result, types.StringTypes):
         print(result)
     else:
         for k,v in six.iteritems(result):

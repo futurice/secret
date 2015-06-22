@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 from __future__ import absolute_import
-import argparse
-import os, sys
-import json
+import argparse, logging, json, os, sys
 
 from secret.project import Project
 
@@ -14,10 +12,12 @@ ALIASES = {'ls':'list',}
 args = None
 project = None
 
-if sys.version_info.major == 2:
-    import logging
+def trollius_log(level=logging.CRITICAL):
     os.environ['TROLLIUSDEBUG'] = "1" # more informative tracebacks
     logging.basicConfig(level=logging.CRITICAL)
+
+if sys.version_info.major == 2:
+    trollius_log()
 
 def print_status(args):
     aws_profile = bool(os.getenv("AWS_PROFILE"))
@@ -29,7 +29,7 @@ def print_status(args):
 def prepare():
     global args, project
     p = argparse.ArgumentParser()
-    p.add_argument("action")
+    p.add_argument("action", help="list,get,put,envs,config,setup")
     p.add_argument("key", nargs="?", default=None)
     p.add_argument("value", nargs="?", default=None)
     p.add_argument("--version", default=None)
@@ -40,6 +40,8 @@ def prepare():
     p.add_argument("--env", help="Environment namespace for keys", default='default')
     p.add_argument("--datafile", default=DATAFILE)
     p.add_argument("--debug", default=None)
+    if len(sys.argv) == 1:
+        sys.exit(p.print_help())
     args = p.parse_args()
     args.action = ALIASES.get(args.action, args.action)
 
@@ -148,6 +150,7 @@ class S3(Storage):
 
     @asyncio.coroutine
     def get(self, key, **kw):
+        if not key: raise Return("Key name missing")
         key = self.prefixify(key)
         extra = {}
         if kw.get('version'):
@@ -271,6 +274,7 @@ def main():
 
     if args.debug:
         boto3.set_stream_logger(name='botocore')
+        trollius_log(level=logging.DEBUG)
 
     session = boto3.session.Session(region_name=region, **kw)
     storage = S3(session=session, vault=args.vault, vaultkey=args.vaultkey, env=args.env, project=project)

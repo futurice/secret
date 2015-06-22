@@ -1,9 +1,10 @@
 #!/usr/bin/env python
+from __future__ import absolute_import
 import argparse
 import os, sys
 import json
 
-from project import Project
+from secret.project import Project
 
 ENCODING = 'utf-8'
 DATAFILE = '.secret'

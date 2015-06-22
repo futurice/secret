@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='secret',
-    version='0.4.5',
+    version='0.4.6',
     description='Secret is a Python library for storing secrets. Backed by Amazon Web Services: IAM for access policies, KMS for encryption keys and S3 for storage',
     keywords = 'secret secrets project vault aws amazon cloud',
     author = 'Jussi Vaihia',

@@ -25,8 +25,8 @@ def print_status(args):
     print("VAULT: {} PROJECT: {} ENV: {} AWS/profile: {} AWS/key: {} AWS/secret: {}"\
             .format(args.vault, args.project, args.env, aws_profile, aws_key, aws_secret))
 
-if __name__ == '__main__':
-    """ Basic actions before imports for a responsive CLI """
+def prepare():
+    global args, project
     p = argparse.ArgumentParser()
     p.add_argument("action")
     p.add_argument("key", nargs="?", default=None)
@@ -52,6 +52,10 @@ if __name__ == '__main__':
     if args.action == 'help':
         print_status(args)
         sys.exit("1. Run setup 2. Check that AWS environment variables for profile OR key+secret are set")
+
+if __name__ == '__main__':
+    """ Basic actions before imports for a responsive CLI """
+    prepare()
 
 from collections import Iterable
 
@@ -127,13 +131,19 @@ class S3(Storage):
         raise Return(dict(zip([self.prefixify(k['Key'], reverse=True) for k in contents], results)))
 
     @asyncio.coroutine
+    def put_backend(self, **kw):
+        raise Return(self.client.put_object(**kw))
+
+    @asyncio.coroutine
     def put(self, key, value, **kw):
         key = self.prefixify(key)
         if os.path.isfile(value):
             value = open(os.path.expandvars(os.path.expanduser(value)), 'r').read()
         data = self.vault.encrypt(value.encode(ENCODING))
         data['name'] = key
-        raise Return(self.client.put_object(Bucket=self.bucket, Key=key, Body=json.dumps(data)))
+        result = yield From(self.put_backend(Bucket=self.bucket, Key=key, Body=json.dumps(data)))
+        if result.get('ResponseMetadata').get('HTTPStatusCode') == 200:
+            raise Return("Success! Wrote: %s"%key)
 
     @asyncio.coroutine
     def get(self, key, **kw):
@@ -250,6 +260,7 @@ class Kms(Vault):
 
 @asyncio.coroutine
 def main():
+    global args, project
     region = os.getenv("AWS_DEFAULT_REGION", args.region)
     kw = {}
     if not os.getenv("AWS_PROFILE"):
@@ -279,6 +290,8 @@ def main():
             print(k,'=',v)
 
 def runner():
+    global args
+    if not args: prepare()
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
 

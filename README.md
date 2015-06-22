@@ -1,8 +1,6 @@
 # Secret
 
-Manage secrets.
-
-Secret provides a Python 3.4+ interface for a secure solution to store secrets backed by Amazon services:
+Secret is a Python library for storing secrets. Backed by Amazon Web Services:
 notably IAM for access policies, KMS for encryption keys and S3 for storage.
 
 ## Setup

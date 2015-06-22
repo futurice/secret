@@ -14,7 +14,7 @@ project = None
 
 def trollius_log(level=logging.CRITICAL):
     os.environ['TROLLIUSDEBUG'] = "1" # more informative tracebacks
-    logging.basicConfig(level=logging.CRITICAL)
+    logging.basicConfig(level=level)
 
 if sys.version_info.major == 2:
     trollius_log()

@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='secret',
-    version='0.4.2',
+    version='0.4.3',
     description='Manage secrets',
-    keywords = 'secret secrets project vault',
+    keywords = 'secret secrets project vault aws amazon cloud',
     author = 'Jussi Vaihia',
     author_email = 'jussi.vaihia@futurice.com',
     license='Apache2',
@@ -12,7 +12,6 @@ setup(
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 3 :: Only',
     ],
     install_requires=['boto3>=0.0.18', 'pycryptodome>=3.1','trollius>=1.0.4'],
     packages = ["secret"],

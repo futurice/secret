@@ -2,3 +2,4 @@
 tags
 *.egg-info/
 dist/
+.secret

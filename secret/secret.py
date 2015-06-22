@@ -1,11 +1,62 @@
 #!/usr/bin/env python
 import argparse
 import os, sys
+import json
+
+from project import Project
+
+ENCODING = 'utf-8'
+DATAFILE = '.secret'
+BOTO_DEFAULT = ''
+ALIASES = {'ls':'list',}
+
+args = None
+project = None
+
+if sys.version_info.major == 2:
+    import logging
+    os.environ['TROLLIUSDEBUG'] = "1" # more informative tracebacks
+    logging.basicConfig(level=logging.CRITICAL)
+
+def print_status(args):
+    aws_profile = bool(os.getenv("AWS_PROFILE"))
+    aws_key = bool(os.getenv('AWS_ACCESS_KEY_ID'))
+    aws_secret = bool(os.getenv('AWS_SECRET_ACCESS_KEY'))
+    print("VAULT: {} PROJECT: {} ENV: {} AWS/profile: {} AWS/key: {} AWS/secret: {}"\
+            .format(args.vault, args.project, args.env, aws_profile, aws_key, aws_secret))
+
+if __name__ == '__main__':
+    """ Basic actions before imports for a responsive CLI """
+    p = argparse.ArgumentParser()
+    p.add_argument("action")
+    p.add_argument("key", nargs="?", default=None)
+    p.add_argument("value", nargs="?", default=None)
+    p.add_argument("--version", default=None)
+    p.add_argument("--region", help="AWS region", default="us-east-1")
+    p.add_argument("--vaultkey", help="Name of KMS key", default="alias/secret")
+    p.add_argument("--vault", help="Name of vault (eg. S3 bucket)", default="secret")
+    p.add_argument("--project", help="Name of project (eg. S3 'folder')", default=None)
+    p.add_argument("--env", help="Environment namespace for keys", default='default')
+    p.add_argument("--datafile", default=DATAFILE)
+    p.add_argument("--debug", default=None)
+    args = p.parse_args()
+    args.action = ALIASES.get(args.action, args.action)
+
+    project = Project(name=args.datafile)
+
+    if args.action != 'setup':
+        args.vault = project.load().get('vault')
+        args.project = project.load().get('project')
+        assert all([args.vault, args.project])
+
+    if args.action == 'help':
+        print_status(args)
+        sys.exit("1. Run setup 2. Check that AWS environment variables for profile OR key+secret are set")
+
 from collections import Iterable
 
 from pprint import pprint as pp
 from base64 import b64encode, b64decode
-import json
 import boto3
 
 import six
@@ -17,43 +68,17 @@ from Crypto.Hash.HMAC import HMAC
 from Crypto.Hash import SHA256
 from Crypto.Random import get_random_bytes
 
-ENCODING = 'utf-8'
-DATAFILE = '.secret'
-BOTO_DEFAULT = ''
-ALIASES = {'ls':'list',}
-
-class Project:
-    def __init__(self, name=DATAFILE):
-        self.name = name
-        self.data = None
-
-    def load(self):
-        if self.data is None:
-            try:
-                data = json.loads(open(self.name, 'r').read())
-            except IOError as e:
-                data = {}
-            self.data = data
-        return self.data
-
-    def save(self, c):
-        settings = self.load()
-        settings.update(**c)
-        with open(self.name, 'w') as f:
-            f.write(json.dumps(settings))
-        self.data = None
-
 class Storage:
     def list(self, **kw): pass
     def get(self, key, **kw): pass
     def put(self, key, value, **kw): pass
 
 class S3(Storage):
-    def __init__(self, session, vault, vaultkey, env='default'):
+    def __init__(self, session, vault, vaultkey, project, env='default'):
         self.client = session.client('s3')
         self.bucket = vault
         self.vault = Kms(session=session, key=vaultkey)
-        self.project = Project()
+        self.project = project
         self.prefix = self.project.load().get('project', '')
         self.env = env + '/'
         if self.prefix:
@@ -69,7 +94,10 @@ class S3(Storage):
     @asyncio.coroutine
     def setup(self, vault, project, **kw):
         # project-user creates a folder inside bucket
-        assert all([vault, project])
+        try:
+            assert all([vault, project])
+        except AssertionError as e:
+            sys.exit("Missing arguments for setup, eg: $ secret setup --vault secret --project helloworld")
         try:
             result = yield From(self.get(project))
             res = "Project with this name already exists"
@@ -222,22 +250,6 @@ class Kms(Vault):
 
 @asyncio.coroutine
 def main():
-    p = argparse.ArgumentParser()
-    p.add_argument("action")
-    p.add_argument("key", nargs="?", default=None)
-    p.add_argument("value", nargs="?", default=None)
-    p.add_argument("--version", default=None)
-    p.add_argument("--region", help="AWS region", default="us-east-1")
-    p.add_argument("--vaultkey", help="Name of KMS key", default="alias/secret")
-    p.add_argument("--vault", help="Name of vault (eg. S3 bucket)", default="secret")
-    p.add_argument("--project", help="Name of project (eg. S3 'folder')", default=None)
-    p.add_argument("--env", help="Environment namespace for keys", default='default')
-    p.add_argument("--datafile", default=DATAFILE)
-    p.add_argument("--debug", default=None)
-    p.add_argument("--status", default=1)
-    args = p.parse_args()
-    args.action = ALIASES.get(args.action, args.action)
-
     region = os.getenv("AWS_DEFAULT_REGION", args.region)
     kw = {}
     if not os.getenv("AWS_PROFILE"):
@@ -245,21 +257,11 @@ def main():
             aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
             aws_session_token=os.getenv('AWS_SESSION_TOKEN'),)
 
-    project = Project()
-
-    if args.action != 'setup':
-        args.vault = project.load().get('vault')
-        args.project = project.load().get('project')
-        assert all([args.vault, args.project])
-
     if args.debug:
         boto3.set_stream_logger(name='botocore')
 
-    if bool(int(args.status)) if args.status else args.status:
-        print("VAULT: {} PROJECT: {} ENV: {} (configs: {})".format(args.vault, args.project, args.env, args.datafile))
-
     session = boto3.session.Session(region_name=region, **kw)
-    storage = S3(session=session, vault=args.vault, vaultkey=args.vaultkey, env=args.env)
+    storage = S3(session=session, vault=args.vault, vaultkey=args.vaultkey, env=args.env, project=project)
 
     method = getattr(storage, args.action)
     result = yield From(method(**vars(args)))

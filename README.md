@@ -12,36 +12,65 @@ notably IAM for access policies, KMS for encryption keys and S3 for storage.
 * In S3, create a bucket called 'secret'
  * Enable Versioning, and set a Lifecycle policy
 
-Use ~/.boto, ~/.aws/credentials profiles (http://boto.readthedocs.org/en/latest/boto_config_tut.html):
-```$ AWS_PROFILE=profile secret```
-
-or ENV variables:
-```
-export AWS_ACCESS_KEY_ID=
-export AWS_SECRET_ACCESS_KEY=
-export AWS_SESSION_TOKEN=
-export AWS_DEFAULT_REGION=
-$ secret
-```
+Configure AWS credentials for Boto (http://boto.readthedocs.org/en/latest/boto_config_tut.html).
 
 ## Usage
 
-Initialize a new project (configuration stored in .secret). The used vault corresponds to S3 bucket name:
+Start by creating a new project: ```--vault``` is the S3 bucket name,
+```--vaultkey``` the KMS key and ```--project``` a destination "folder" (created for you) in the bucket:
 ```
-$ secret setup --vault secret --project helloworld
+$ secret setup --vault secret --vaultkey alias/secret --project helloworld
+```
+The used project configuration is stored in .secret.
+
+## Commands
+
+```bash
+$ secret
+<CLI instructions>
+
+$ secret list
+[]
+
+$ secret put hello world
+Success! Wrote: secret/default/hello
+
+$ secret list
+['hello']
+
+$ secret get hello
+world
+
+$ secret put ssh_key ~/.ssh/id_rsa
+Success! Wrote: secret/default/ssh_key
 ```
 
-Commands:
-```
-$ secret list
-$ secret put hello world
-$ secret put ssh_key ~/.ssh/id_rsa
-$ secret get ssh_key
-$ secret config
-$ secret delete ssh_key
+### Versioning
+
+With S3 versioning enabled all changes leave an audit trail:
+
+```bash
 $ secret versions
+<list all versions of all keys>
+
 $ secret versions ssh_key
+<list versions of a single key>
+
+$ secret delete ssh_key
+
+$ secret get ssh_key
+<NoSuchKey>
+
 $ secret get ssh_key --version <version>
+(key value data)
+```
+
+### Environments
+
+By default all project keys are stored under ```default``` environment. To store user/situation specific values
+for the same keys (and new ones), provide ```--env``` while issuing operations.
+
+```bash
 $ secret envs
 $ secret put hello world --env production
 $ secret config --env production

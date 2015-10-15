@@ -21,3 +21,6 @@ class Project:
         with open(self.name, 'w') as f:
             f.write(json.dumps(settings))
         self.data = None
+
+def get_project(name):
+    return Project(name=name)

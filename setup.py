@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='secret',
-    version='0.4.8',
+    version='0.5.0',
     description='Secret is for storing secrets. Backed by Amazon Web Services: IAM for access policies, KMS for encryption keys and S3 for storage',
     keywords = 'secret secrets project vault aws amazon cloud',
     author = 'Jussi Vaihia',

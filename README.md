@@ -30,13 +30,13 @@ $ secret
 <CLI instructions>
 
 $ secret list
-[]
+
 
 $ secret put hello world
 Success! Wrote: secret/default/hello
 
 $ secret list
-['hello']
+hello
 
 $ secret get hello
 world

@@ -77,6 +77,7 @@ $ secret versions ssh_key
 <list versions of a single key>
 
 $ secret delete ssh_key
+Success! Deleted: helloworld/default/ssh_key
 
 $ secret get ssh_key
 <NoSuchKey>

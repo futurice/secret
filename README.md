@@ -48,11 +48,12 @@ Success! Wrote: secret/default/ssh_key
 ### Keyspace
 
 Project configuration (defined in .secret) allows for addressing keys with a shorthand syntax. The full naming
-is also available.  That is, ```helloworld/default/hello``` equals ```hello```.
+is also available.  That is, `project`/`environment`/`key` lookups like `helloworld/default/hello` equal `default/hello` equal `hello`.
+The `/` character is reserved for supporting nested keys.
 
 ### Grouping
 
-By namespacing keys it is possible to create groups of interest.
+By namespacing keys it is possible to create groups of interest. Nested key names can be up to 1024 ASCII characters long.
 
 ```
 $ secret put postgres/username joe

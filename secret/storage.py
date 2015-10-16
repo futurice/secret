@@ -142,6 +142,9 @@ class S3(Storage):
     def prefixify(self, key, reverse=False):
         if reverse:
             key = key.replace('{}{}'.format(self.prefix, self.env), '')
-        elif (key is not None and self.prefix not in key):
-            key = '{}{}{}'.format(self.prefix, self.env, key)
+        elif key is not None:
+            if self.prefix not in key and self.env not in key:
+                key = '{}{}{}'.format(self.prefix, self.env, key)
+            elif self.prefix not in key:
+                key = '{}{}'.format(self.prefix, key)
         return key

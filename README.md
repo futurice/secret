@@ -1,6 +1,6 @@
 # Secret
 
-Secret is a Python library for storing secrets. Backed by Amazon Web Services:
+Secret is for storing secrets. Backed by Amazon Web Services:
 notably IAM for access policies, KMS for encryption keys and S3 for storage.
 
 ## Setup
@@ -17,7 +17,7 @@ Configure AWS credentials for Boto (http://boto.readthedocs.org/en/latest/boto_c
 ## Usage
 
 Start by creating a new project: ```--vault``` is the S3 bucket name,
-```--vaultkey``` the KMS key and ```--project``` a destination "folder" (created for you) in the bucket:
+```--vaultkey``` the KMS key and ```--project``` a destination "folder" (created for you) in the S3 bucket:
 ```
 $ secret setup --vault secret --vaultkey alias/secret --project helloworld
 ```
@@ -43,6 +43,26 @@ world
 
 $ secret put ssh_key ~/.ssh/id_rsa
 Success! Wrote: secret/default/ssh_key
+```
+
+### Keyspace
+
+Project configuration (defined in .secret) allows for addressing keys with a shorthand syntax. The full naming
+is also available.  That is, ```helloworld/default/hello``` equals ```hello```.
+
+### Grouping
+
+By namespacing keys it is possible to create groups of interest.
+
+```
+$ secret put postgres/username joe
+$ secret put postgres/password joespassword
+$ secret put postgres/timeout 3600
+$ secret get postgres
+Key       Value
+timeout   3600
+password  joespassword
+username  joe
 ```
 
 ### Versioning
@@ -73,5 +93,10 @@ for the same keys (and new ones), provide ```--env``` while issuing operations.
 ```bash
 $ secret envs
 $ secret put hello world --env production
-$ secret config --env production
+$ secret get --env production
 ```
+
+### Debugging
+
+To enable verbose output for commands use ```--debug 1``` argument.
+

@@ -1,3 +1,4 @@
 boto3>=0.0.18
 pycryptodome>=3.1
 trollius>=1.0.4
+tabulate>=0.7.5

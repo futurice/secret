@@ -1,14 +1,16 @@
 from __future__ import absolute_import
+from botocore.exceptions import ClientError
 import os, sys, json
 import trollius as asyncio
 from trollius import From, Return
+from collections import OrderedDict
 
 from secret.vault import Kms
 
 BOTO_DEFAULT = ''
 ENCODING = 'utf-8'
 
-class Storage:
+class Storage(object):
     def list(self, **kw): pass
     def get(self, key, **kw): pass
     def put(self, key, value, **kw): pass
@@ -43,7 +45,7 @@ class S3(Storage):
         except:
             result = yield From(self.put(project, ''))
             self.project.save(dict(vault=vault, project=project, key=self.vaultkey))
-            res = "Saved settings to %s"%self.project.name
+            res = "Success! Project created. Configuration stored in %s"%self.project.name
         raise Return(res)
 
     @asyncio.coroutine
@@ -53,17 +55,19 @@ class S3(Storage):
         raise Return(self.client.list_objects(Bucket=self.bucket, Prefix=prefix, MaxKeys=1000, Delimiter=kw.get('delimiter', BOTO_DEFAULT)))
 
     @asyncio.coroutine
-    def list(self, prefix=None, **kw):
-        response = yield From(self.list_backend(prefix=prefix, **kw))
+    def list(self, key=None, **kw):
+        key = self.prefixify(key)
+        response = yield From(self.list_backend(prefix=key, **kw))
         raise Return([self.prefixify(k['Key'], reverse=True) for k in response.get('Contents', [])])
 
     @asyncio.coroutine
-    def config(self, **kw):
-        contents = yield From(self.list_backend())
+    def config(self, key=None, **kw):
+        contents = yield From(self.list_backend(prefix=self.prefixify(key)))
         contents = contents.get('Contents', [])
-        tasks = [self.get(obj['Key']) for obj in contents]
+        tasks = [self.get(key=obj['Key'], **kw) for obj in contents]
         results = yield From(asyncio.gather(*tasks))
-        raise Return(dict(zip([self.prefixify(k['Key'], reverse=True) for k in contents], results)))
+        keys = [k['Key'].split('/')[-1] for k in contents]
+        raise Return(OrderedDict(zip(keys, results)))
 
     @asyncio.coroutine
     def put_backend(self, **kw):
@@ -79,21 +83,45 @@ class S3(Storage):
         result = yield From(self.put_backend(Bucket=self.bucket, Key=key, Body=json.dumps(data)))
         if result.get('ResponseMetadata').get('HTTPStatusCode') == 200:
             raise Return("Success! Wrote: %s"%key)
+        else:
+            raise Return(result)
+
+    @asyncio.coroutine
+    def get_backend(self, **kw):
+        raise Return(self.client.get_object(**kw))
 
     @asyncio.coroutine
     def get(self, key, **kw):
-        if not key: raise Return("Key name missing")
-        key = self.prefixify(key)
+        key = self.prefixify(key or '')
         extra = {}
         if kw.get('version'):
             extra['VersionId'] = kw.get('version')
-        res = self.client.get_object(Bucket=self.bucket, Key=key, **extra)
-        raise Return(self.vault.decrypt(json.loads(res['Body'].read().decode(ENCODING))).decode(ENCODING))
+        try:
+            result = yield From(self.get_backend(Bucket=self.bucket, Key=key, **extra))
+        except Exception as e:
+            if not kw.get('in_group_check'):
+                # check for grouped keys
+                key = key.rstrip('/')+'/'
+                kw['in_group_check'] = True
+                result = yield From(self.config(key=key, **kw))
+                if not result:
+                    result = "Error! The specified key does not exist."
+                raise Return(result)
+            raise
+        raise Return(self.vault.decrypt(json.loads(result['Body'].read().decode(ENCODING))).decode(ENCODING))
+
+    @asyncio.coroutine
+    def delete_backend(self, **kw):
+        raise Return(self.client.delete_object(**kw))
 
     @asyncio.coroutine
     def delete(self, key, **kw):
         key = self.prefixify(key)
-        raise Return(self.client.delete_object(Bucket=self.bucket, Key=key))
+        result = yield From(self.delete_backend(Bucket=self.bucket, Key=key))
+        if result.get('ResponseMetadata').get('HTTPStatusCode') == 204:
+            raise Return("Success! Deleted: %s"%key)
+        else:
+            raise Return(result)
 
     @asyncio.coroutine
     def versions(self, **kw):
@@ -114,6 +142,6 @@ class S3(Storage):
     def prefixify(self, key, reverse=False):
         if reverse:
             key = key.replace('{}{}'.format(self.prefix, self.env), '')
-        elif self.prefix not in key:
+        elif (key is not None and self.prefix not in key):
             key = '{}{}{}'.format(self.prefix, self.env, key)
         return key

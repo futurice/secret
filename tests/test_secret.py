@@ -4,7 +4,10 @@ import os, sys
 import trollius as asyncio
 from trollius import From, Return
 
-from cStringIO import StringIO
+try:# PY2
+    from cStringIO import StringIO
+except:
+    from io import StringIO
 from contextlib import contextmanager
 
 from secret.secret import runner, prepare, main

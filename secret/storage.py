@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from botocore.exceptions import ClientError
-import os, sys, json
+import codecs, os, sys, json
 from collections import OrderedDict
 
 import trollius as asyncio
@@ -10,6 +10,7 @@ from secret.vault import Kms
 
 BOTO_DEFAULT = ''
 ENCODING = 'utf-8'
+PY3 = (sys.version_info.major == 3)
 
 class Storage(object):
     def list(self, **kw): pass
@@ -79,13 +80,14 @@ class S3(Storage):
         if not value: raise Return("Error! No value provided.")
 
         key = self.prefixify(key)
+        is_file = False
+        is_binary = False # TODO: --binary
         if os.path.isfile(value):
             value = open(os.path.expandvars(os.path.expanduser(value)), 'r').read().rstrip('\n')
             is_file = True
         else:
             value = value.encode(ENCODING)
-            is_file = False
-        data = self.vault.encrypt(value, is_file=is_file)
+        data = self.vault.encrypt(value, is_file=is_file, is_binary=is_binary)
         data['name'] = key
         result = yield From(self.put_backend(Bucket=self.bucket, Key=key, Body=json.dumps(data)))
         if result.get('ResponseMetadata').get('HTTPStatusCode') == 200:
@@ -116,10 +118,10 @@ class S3(Storage):
                 raise Return(result)
             raise
         body = json.loads(result['Body'].read().decode(ENCODING))
-        if body.get('is_file', False):
-            data = self.vault.decrypt(body)
-        else:
-            data = self.vault.decrypt(body).decode(ENCODING)
+        data = self.vault.decrypt(body)
+        is_binary = body.get('is_binary', False)
+        if not is_binary:
+            data = data.decode(ENCODING)
         raise Return(data)
 
     @asyncio.coroutine

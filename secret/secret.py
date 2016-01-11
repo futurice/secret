@@ -34,6 +34,8 @@ def prettyprint(result):
         print("Keys:")
         for k in result:
             print(k)
+    elif isinstance(result, bytes):
+        print(result)
     elif is_str(result):
         print(result)
     else:

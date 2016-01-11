@@ -45,6 +45,7 @@ class Kms(Vault):
         data['nonce'] = tob64(nonce)
         data['tag'] = tob64(tag)
         data['hmac'] = hmac
+        data['is_file'] = kw.get('is_file', False)
         return data
 
     def decrypt(self, data, **kw):

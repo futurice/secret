@@ -1,4 +1,4 @@
-boto3>=0.0.18
-pycryptodome>=3.1
-trollius>=1.0.4
+boto3>=1.2.3
+pycryptodome>=3.3
+trollius>=2.0
 tabulate>=0.7.5

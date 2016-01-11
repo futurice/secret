@@ -1,14 +1,16 @@
 from __future__ import absolute_import
 from botocore.exceptions import ClientError
-import os, sys, json
+import codecs, os, sys, json
+from collections import OrderedDict
+
 import trollius as asyncio
 from trollius import From, Return
-from collections import OrderedDict
 
 from secret.vault import Kms
 
 BOTO_DEFAULT = ''
 ENCODING = 'utf-8'
+PY3 = (sys.version_info.major == 3)
 
 class Storage(object):
     def list(self, **kw): pass
@@ -75,10 +77,17 @@ class S3(Storage):
 
     @asyncio.coroutine
     def put(self, key, value, **kw):
+        if not value: raise Return("Error! No value provided.")
+
         key = self.prefixify(key)
+        is_file = False
+        is_binary = False # TODO: --binary
+        mode = 'rb'
         if os.path.isfile(value):
-            value = open(os.path.expandvars(os.path.expanduser(value)), 'r').read()
-        data = self.vault.encrypt(value.encode(ENCODING))
+            value = codecs.open(os.path.expandvars(os.path.expanduser(value)), mode=mode, encoding=ENCODING).read().rstrip('\n')
+            is_file = True
+        value = value.encode(ENCODING)
+        data = self.vault.encrypt(value, is_file=is_file, is_binary=is_binary)
         data['name'] = key
         result = yield From(self.put_backend(Bucket=self.bucket, Key=key, Body=json.dumps(data)))
         if result.get('ResponseMetadata').get('HTTPStatusCode') == 200:
@@ -108,7 +117,12 @@ class S3(Storage):
                     result = "Error! The specified key does not exist."
                 raise Return(result)
             raise
-        raise Return(self.vault.decrypt(json.loads(result['Body'].read().decode(ENCODING))).decode(ENCODING))
+        body = json.loads(result['Body'].read().decode(ENCODING))
+        data = self.vault.decrypt(body)
+        is_binary = body.get('is_binary', False)
+        if not is_binary:
+            data = data.decode(ENCODING)
+        raise Return(data)
 
     @asyncio.coroutine
     def delete_backend(self, **kw):

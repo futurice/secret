@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import absolute_import
+from __future__ import print_function
 import logging, os, sys
 from pprint import pprint as pp
 
@@ -13,16 +14,14 @@ def trollius_log(level=logging.CRITICAL):
 if sys.version_info.major == 2:
     trollius_log()
 
-if __name__ == '__main__':
-    """ Basic actions before imports for a responsive CLI """
-    prepare()
-
 from secret.storage import S3
 
 import boto3
 import six
+
 import trollius as asyncio
 from trollius import From, Return
+
 from tabulate import tabulate
 
 def prettyprint(result):
@@ -35,6 +34,8 @@ def prettyprint(result):
         print("Keys:")
         for k in result:
             print(k)
+    elif isinstance(result, bytes):
+        print(result)
     elif is_str(result):
         print(result)
     else:
@@ -62,7 +63,8 @@ def main(args):
     storage = S3(session=session, vault=args.vault, vaultkey=args.vaultkey, env=args.env, project=project)
 
     method = getattr(storage, args.action)
-    result = yield From(method(**vars(args)))
+    fn = lambda: method(**vars(args))
+    result = yield From(fn())
     prettyprint(result)
 
 def runner():

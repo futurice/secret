@@ -6,6 +6,7 @@ notably IAM for access policies, KMS for encryption keys and S3 for storage.
 ## Setup
 
 * `pip install secret`
+** Python3 version available as `secret-python3`.
 * Login to Amazon AWS: https://console.aws.amazon.com/iam/home
 * In IAM, create a (KMS) Encryption Key called 'secret'
  * Check that Region Filter is set to the region S3 will use

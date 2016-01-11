@@ -1,0 +1,26 @@
+---
+language: python
+python:
+- 2.7
+- 3.5
+
+env:
+  - PYTHON_VERSION=secret
+  - PYTHON_VERSION=secret-python3
+
+install:
+  - pip install $PYTHON_VERSION
+
+matrix:
+  exclude:
+    - python: 2.7
+      env: PYTHON_VERSION=secret-python3
+    - python: 3.5
+      env: PYTHON_VERSION=secret
+
+script:
+  - python setup.py test
+
+branches:
+  only:
+    - master

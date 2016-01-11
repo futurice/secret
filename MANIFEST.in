@@ -1,1 +1,4 @@
 graft secret
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc
+recursive-exclude * *.pyo

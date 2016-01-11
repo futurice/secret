@@ -82,11 +82,11 @@ class S3(Storage):
         key = self.prefixify(key)
         is_file = False
         is_binary = False # TODO: --binary
+        mode = 'rb'
         if os.path.isfile(value):
-            value = open(os.path.expandvars(os.path.expanduser(value)), 'r').read().rstrip('\n')
+            value = codecs.open(os.path.expandvars(os.path.expanduser(value)), mode=mode, encoding=ENCODING).read().rstrip('\n')
             is_file = True
-        else:
-            value = value.encode(ENCODING)
+        value = value.encode(ENCODING)
         data = self.vault.encrypt(value, is_file=is_file, is_binary=is_binary)
         data['name'] = key
         result = yield From(self.put_backend(Bucket=self.bucket, Key=key, Body=json.dumps(data)))

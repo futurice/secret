@@ -1,4 +1,5 @@
 # Secret
+[![Build Status](https://travis-ci.org/futurice/secret.svg?branch=master)](https://travis-ci.org/futurice/secret)
 
 Secret is for storing secrets. Backed by Amazon Web Services:
 notably IAM for access policies, KMS for encryption keys and S3 for storage.

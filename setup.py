@@ -12,6 +12,9 @@ class TestCommand(Command):
         pass
 
     def run(self):
+        if os.getenv('PYTHON_VERSION') == 'secret-python3':# .travis.yml
+            subprocess.call(['bash conv_py2_to_py3.bash',], shell=True)
+
         raise SystemExit(
             subprocess.call(['py.test',]))
 

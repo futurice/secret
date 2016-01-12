@@ -11,6 +11,7 @@ except:
 from contextlib import contextmanager
 
 from secret.secret import runner, prepare, main
+from secret.project import get_project
 
 @contextmanager
 def capture(command, *args, **kwargs):
@@ -27,12 +28,16 @@ def run_runner(*args, **kwargs):
     loop = asyncio.get_event_loop()
     loop.run_until_complete(future)
 
-def testdir():
+def datadir():
     return os.path.dirname(os.path.realpath(__file__))
 
 class TestSecret(unittest.TestCase):
     def setUp(self):
         del sys.argv[1:]
+        self.project = get_project('.secret').load()
+
+    def project_name(self):
+        return self.project['project']
 
     def test_cli_without_arguments(self):
         with self.assertRaises(SystemExit):
@@ -54,7 +59,7 @@ class TestSecret(unittest.TestCase):
         sys.argv.append('key')
         sys.argv.append('value')
         with capture(run_runner) as output:
-            self.assertEquals(output, 'Success! Wrote: helloworld/default/key\n')
+            self.assertEquals(output, 'Success! Wrote: {}/default/key\n'.format(self.project_name()))
 
         del sys.argv[1:]
         sys.argv.append('get')
@@ -66,14 +71,14 @@ class TestSecret(unittest.TestCase):
         sys.argv.append('delete')
         sys.argv.append('key')
         with capture(run_runner) as output:
-            self.assertEquals(output, 'Success! Deleted: helloworld/default/key\n')
+            self.assertEquals(output, 'Success! Deleted: {}/default/key\n'.format(self.project_name()))
 
     def test_put_key_file(self):
         sys.argv.append('put')
         sys.argv.append('keyfile')
-        sys.argv.append(os.path.join(testdir(), 'upload.txt'))
+        sys.argv.append(os.path.join(datadir(), 'upload.txt'))
         with capture(run_runner) as output:
-            self.assertEquals(output, 'Success! Wrote: helloworld/default/keyfile\n')
+            self.assertEquals(output, 'Success! Wrote: {}/default/keyfile\n'.format(self.project_name()))
 
         del sys.argv[1:]
         sys.argv.append('get')
@@ -85,4 +90,4 @@ class TestSecret(unittest.TestCase):
         sys.argv.append('delete')
         sys.argv.append('keyfile')
         with capture(run_runner) as output:
-            self.assertEquals(output, 'Success! Deleted: helloworld/default/keyfile\n')
+            self.assertEquals(output, 'Success! Deleted: {}/default/keyfile\n'.format(self.project_name()))

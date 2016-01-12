@@ -18,8 +18,11 @@ matrix:
     - python: 3.5
       env: PYTHON_VERSION=secret
 
+jsondata: &store |-
+  echo '{"project": "travisci", "vault": "travis-secret", "key": "alias/travis-secret"}' > .secret
+
 script:
-  - echo '{"project": "travisci", "vault": "travis-secret", "key": "alias/travis-secret"}'>.secret
+  - *store
   - python setup.py test
 
 branches:

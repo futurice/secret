@@ -19,7 +19,7 @@ matrix:
       env: PYTHON_VERSION=secret
 
 script:
-  - secret setup --vault travis-secret --vaultkey alias/travis-secret --project travisci
+  - echo '{"project": "travisci", "vault": "travis-secret", "key": "alias/travis-secret"}'>.secret
   - python setup.py test
 
 branches:

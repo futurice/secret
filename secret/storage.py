@@ -40,10 +40,10 @@ class S3(Storage):
     def setup(self, vault, project, **kw):
         # project-user creates a folder inside bucket
         if not all([vault, project]):
-            sys.exit("Vault and/or project undefined")
+            sys.exit("Error! Vault and/or project undefined")
         try:
             result = yield From(self.get(project))
-            res = "Project with this name already exists"
+            res = "Error! Project with this name already exists"
         except:
             result = yield From(self.put(project, ''))
             self.project.save(dict(vault=vault, project=project, key=self.vaultkey))

@@ -53,6 +53,8 @@ def prepare():
             args.vault = config.get(secret_profile, 'vault', 0)
         if not args.vaultkey:
             args.vaultkey = config.get(secret_profile, 'vaultkey', 0)
+        if not args.region:
+            args.region = config.get(secret_profile, 'region', 0)
 
     if not all([args.vault]):
         sys.exit("Vault configuration undefined: --vault, --vaultkey")

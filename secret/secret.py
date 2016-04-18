@@ -24,7 +24,7 @@ from trollius import From, Return
 
 from tabulate import tabulate
 
-def prettyprint(result):
+def fmt_console(result):
     def is_str(result):
         try:
             return isinstance(result, basestring)
@@ -44,6 +44,20 @@ def prettyprint(result):
             table.append([k,v])
         print(tabulate(table, numalign='left', tablefmt='plain'))
 
+def fmt_docker(result):
+    c = []
+    for k,v in six.iteritems(result):
+        c.append('-e '+k+'='+v)
+    print(" ".join(c))
+
+
+
+def prettyprint(result, fmt):
+    if fmt == 'docker':
+        fmt_docker(result)
+    else:
+        fmt_console(result)
+
 @asyncio.coroutine
 def main(args):
     project = get_project(args.datafile)
@@ -60,12 +74,18 @@ def main(args):
         trollius_log(level=logging.DEBUG)
 
     session = boto3.session.Session(region_name=region, **kw)
-    storage = S3(session=session, vault=args.vault, vaultkey=args.vaultkey, env=args.env, project=project)
+    storage = S3(session=session,
+            vault=args.vault,
+            vaultkey=args.vaultkey,
+            env=args.env,
+            region=args.region,
+            prefix=args.project,
+            project=project,)
 
     method = getattr(storage, args.action)
     fn = lambda: method(**vars(args))
     result = yield From(fn())
-    prettyprint(result)
+    prettyprint(result, args.fmt)
 
 def runner():
     args = prepare()

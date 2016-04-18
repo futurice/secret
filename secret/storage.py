@@ -18,14 +18,19 @@ class Storage(object):
     def put(self, key, value, **kw): pass
 
 class S3(Storage):
-    def __init__(self, session, vault, vaultkey, project, env='default'):
+    """
+    A single bucket holds multiple projects.
+    """
+    def __init__(self, session, vault, vaultkey, region, prefix, project, env='default'):
         self.client = session.client('s3')
         self.bucket = vault
-        self.vaultkey = vaultkey
         self.vault = Kms(session=session, key=vaultkey)
+        self.vaultkey = vaultkey
+        self.region = region
+        self.prefix = prefix
         self.project = project
-        self.prefix = self.project.load().get('project', '')
         self.env = env + '/'
+
         if self.prefix:
             self.prefix += '/'
 
@@ -41,19 +46,19 @@ class S3(Storage):
         # project-user creates a folder inside bucket
         if not all([vault, project]):
             sys.exit("Error! Vault and/or project undefined")
+        project_s3 = project.rstrip('/')+'/'
         try:
-            result = yield From(self.get(project))
-            res = "Error! Project with this name already exists"
-        except:
-            result = yield From(self.put(project, ''))
-            self.project.save(dict(vault=vault, project=project, key=self.vaultkey))
+            result = yield From(self.get(project_s3, in_group_check=False))
+            res = "Error! A project with this name already exists"
+        except ClientError as e:
+            result = yield From(self.put(project_s3, '', prefixify=False))
+            self.project.save(dict(vault=vault, project=project, key=self.vaultkey, region=self.region))
             res = "Success! Project created. Configuration stored in %s"%self.project.name
         raise Return(res)
 
     @asyncio.coroutine
     def list_backend(self, prefix=None, **kw):
-        if not prefix:
-            prefix = self.prefix + self.env
+        prefix = prefix or self.prefixify('')
         raise Return(self.client.list_objects(Bucket=self.bucket, Prefix=prefix, MaxKeys=1000, Delimiter=kw.get('delimiter', BOTO_DEFAULT)))
 
     @asyncio.coroutine
@@ -66,8 +71,12 @@ class S3(Storage):
     def config(self, key=None, **kw):
         contents = yield From(self.list_backend(prefix=self.prefixify(key)))
         contents = contents.get('Contents', [])
+        kw.setdefault('in_group_check', True)
         tasks = [self.get(key=obj['Key'], **kw) for obj in contents]
-        results = yield From(asyncio.gather(*tasks))
+        try:
+            results = yield From(asyncio.gather(*tasks))
+        except ValueError as e:
+            raise Return({})
         keys = [k['Key'].split('/')[-1] for k in contents]
         raise Return(OrderedDict(zip(keys, results)))
 
@@ -77,9 +86,11 @@ class S3(Storage):
 
     @asyncio.coroutine
     def put(self, key, value, **kw):
-        if not value: raise Return("Error! No value provided.")
+        if value is None:
+            raise Return("Error! No value provided.")
 
-        key = self.prefixify(key)
+        if kw.get('prefixify', True):
+            key = self.prefixify(key)
         is_file = False
         is_binary = False # TODO: --binary
         mode = 'rb'
@@ -101,14 +112,17 @@ class S3(Storage):
 
     @asyncio.coroutine
     def get(self, key, **kw):
-        key = self.prefixify(key or '')
+        if key is None:
+            raise Return("Error! No key provided.")
+
+        key = self.prefixify(key)
         extra = {}
         if kw.get('version'):
             extra['VersionId'] = kw.get('version')
         try:
             result = yield From(self.get_backend(Bucket=self.bucket, Key=key, **extra))
         except Exception as e:
-            if not kw.get('in_group_check'):
+            if kw.get('in_group_check', True):
                 # check for grouped keys
                 key = key.rstrip('/')+'/'
                 kw['in_group_check'] = True
@@ -155,10 +169,15 @@ class S3(Storage):
 
     def prefixify(self, key, reverse=False):
         if reverse:
-            key = key.replace('{}{}'.format(self.prefix, self.env), '')
+            if self.prefix and self.env:
+                key = key.replace('{}{}'.format(self.prefix, self.env), '')
         elif key is not None:
-            if self.prefix not in key and self.env not in key:
-                key = '{}{}{}'.format(self.prefix, self.env, key)
-            elif self.prefix not in key:
-                key = '{}{}'.format(self.prefix, key)
+            if self.env:
+                if self.prefix not in key and self.env not in key:
+                    key = '{}{}{}'.format(self.prefix, self.env, key)
+            else:
+                if self.prefix not in key:
+                    key = '{}{}'.format(self.prefix, key)
+        key = key or ''
+        key = key.replace('//','/')
         return key

@@ -21,9 +21,9 @@ Configure AWS credentials for Boto (http://boto.readthedocs.org/en/latest/boto_c
 Start by creating a new project: ```--vault``` is the S3 bucket name,
 ```--vaultkey``` the KMS key and ```--project``` a destination "folder" (created for you) in the S3 bucket:
 ```
-$ secret setup --vault secret --vaultkey alias/secret --project helloworld
+$ secret setup --vault secret --vaultkey alias/secret --region us-east-1 --project helloworld
 ```
-The used project configuration is stored in .secret.
+The project configuration is stored in .secret to avoid typing required arguments on every command.
 
 ## Commands
 

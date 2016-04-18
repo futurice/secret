@@ -25,6 +25,13 @@ $ secret setup --vault secret --vaultkey alias/secret --region us-east-1 --proje
 ```
 The project configuration is stored in .secret to avoid typing required arguments on every command.
 
+Global configuration can be stored to `~/.secret/credentials`, for example:
+```bash
+[default]
+vault=secret
+vaultkey=alias/secret
+```
+
 ## Commands
 
 ```bash

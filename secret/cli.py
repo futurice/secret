@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import argparse, sys, os
+import argparse, sys, os, ConfigParser
 from secret.project import get_project
 from secret.templates import statusT, helpT
 
@@ -34,10 +34,22 @@ def prepare():
 
     project = get_project(args.datafile)
 
+    # Arguments preference: CLI -> .secret -> globals
+
     args.project = args.project if (args.project is not None) else project.load().get('project', '')
     args.vault = args.vault or project.load().get('vault')
     args.vaultkey = args.vaultkey or project.load().get('key')
     args.region = args.region or project.load().get('region')
+
+    secret_profile = os.getenv("SECRET_PROFILE", "default")
+    config = ConfigParser.SafeConfigParser()
+    config.read(os.path.expanduser('~/.secret/credentials'))
+    if config.has_section(secret_profile):
+        if not args.vault:
+            args.vault = config.get(secret_profile, 'vault', 0)
+        if not args.vaultkey:
+            args.vaultkey = config.get(secret_profile, 'vaultkey', 0)
+
     if not all([args.vault]):
         sys.exit("Vault configuration undefined: --vault, --vaultkey")
 

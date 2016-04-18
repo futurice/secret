@@ -1,6 +1,10 @@
 from __future__ import absolute_import
 
-import argparse, sys, os, ConfigParser
+try:# PY2
+    import ConfigParser as configparser
+except:
+    import configparser
+import argparse, sys, os
 from secret.project import get_project
 from secret.templates import statusT, helpT
 
@@ -42,7 +46,7 @@ def prepare():
     args.region = args.region or project.load().get('region')
 
     secret_profile = os.getenv("SECRET_PROFILE", "default")
-    config = ConfigParser.SafeConfigParser()
+    config = configparser.SafeConfigParser()
     config.read(os.path.expanduser('~/.secret/credentials'))
     if config.has_section(secret_profile):
         if not args.vault:

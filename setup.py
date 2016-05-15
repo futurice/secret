@@ -18,7 +18,7 @@ class TestCommand(Command):
         raise SystemExit(
             subprocess.call(['py.test',]))
 
-install_requires=['boto3>=0.0.18', 'pycryptodome>=3.1','tabulate>=0.7.5','pytest>=2.8.5']
+install_requires=['boto3>=0.0.18', 'pycryptodome>=3.1','tabulate>=0.7.5','pytest>=2.8.5', 'six']
 if sys.version_info.major == 2:
     install_requires.append('trollius>=1.0.4')
 

@@ -29,6 +29,7 @@ def prepare():
     p.add_argument("-P", "--project", help="Name of project (eg. S3 'folder')", default=None)
     p.add_argument("--env", help="Environment namespace for keys", default='default')
     p.add_argument("-F","--fmt", help="Output format", default='console')
+    p.add_argument("-o","--output", help="Output to console (default) or given filepath", default='')
     p.add_argument("--datafile", default=DATAFILE)
     p.add_argument("--debug", default=None)
     if len(sys.argv) == 1:

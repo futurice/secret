@@ -45,14 +45,16 @@ class TestSecret(unittest.TestCase):
 
     def test_put(self):
         sys.argv.append('put')
-        with capture(run_runner) as output:
-            self.assertEquals(output, 'Error! No value provided.\n')
+        with self.assertRaises(SystemExit):
+            with capture(run_runner) as output:
+                self.assertEquals(output, 'Error! No value provided.\n')
 
     def test_put_key(self):
         sys.argv.append('put')
         sys.argv.append('key')
-        with capture(run_runner) as output:
-            self.assertEquals(output, 'Error! No value provided.\n')
+        with self.assertRaises(SystemExit):
+            with capture(run_runner) as output:
+                self.assertEquals(output, 'Error! No value provided.\n')
 
     def test_put_key_value(self):
         sys.argv.append('put')

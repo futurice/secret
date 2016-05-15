@@ -15,48 +15,13 @@ if sys.version_info.major == 2:
     trollius_log()
 
 from secret.storage import S3
+from secret.output import prettyprint
 
 import boto3
 import six
 
 import trollius as asyncio
 from trollius import From, Return
-
-from tabulate import tabulate
-
-def fmt_console(result):
-    def is_str(result):
-        try:
-            return isinstance(result, basestring)
-        except NameError:
-            return isinstance(result, str)
-    if any(isinstance(result, k) for k in [list]):
-        print("Keys:")
-        for k in result:
-            print(k)
-    elif isinstance(result, bytes):
-        print(result)
-    elif is_str(result):
-        print(result)
-    else:
-        table = [["Key", "Value"]]
-        for k,v in six.iteritems(result):
-            table.append([k,v])
-        print(tabulate(table, numalign='left', tablefmt='plain'))
-
-def fmt_docker(result):
-    c = []
-    for k,v in six.iteritems(result):
-        c.append('-e '+k+'='+v)
-    print(" ".join(c))
-
-
-
-def prettyprint(result, fmt):
-    if fmt == 'docker':
-        fmt_docker(result)
-    else:
-        fmt_console(result)
 
 @asyncio.coroutine
 def main(args):
@@ -85,7 +50,7 @@ def main(args):
     method = getattr(storage, args.action)
     fn = lambda: method(**vars(args))
     result = yield From(fn())
-    prettyprint(result, args.fmt)
+    prettyprint(result, args)
 
 def runner():
     args = prepare()

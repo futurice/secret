@@ -18,7 +18,6 @@ from secret.storage import S3
 from secret.output import prettyprint
 
 import boto3
-import six
 
 import trollius as asyncio
 from trollius import From, Return

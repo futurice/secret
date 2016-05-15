@@ -52,6 +52,8 @@ world
 
 $ secret put ssh_key ~/.ssh/id_rsa
 Success! Wrote: secret/default/ssh_key
+
+$ secret get ssh_key -o ~/.ssh/id_rsa
 ```
 
 ### Keyspace

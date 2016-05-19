@@ -42,7 +42,7 @@ def fmt_console(result):
 def fmt_docker(result):
     c = []
     for k,v in six.iteritems(result):
-        c.append('-e '+k+'='+v)
+        c.append('-e '+k+'="'+v+'"')
     print(" ".join(c), end='')
 
 def has_error(result):

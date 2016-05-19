@@ -74,7 +74,7 @@ class TestSecret(unittest.TestCase):
         sys.argv.append('-F')
         sys.argv.append('docker')
         with capture(run_runner) as output:
-            self.assertEquals(output, '-e key=value\n')
+            self.assertEquals(output, '-e key="value"\n')
 
         del sys.argv[1:]
         sys.argv.append('delete')

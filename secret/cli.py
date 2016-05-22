@@ -51,11 +51,11 @@ def prepare():
     config.read(os.path.expanduser('~/.secret/credentials'))
     if config.has_section(secret_profile):
         if not args.vault:
-            args.vault = config.get(secret_profile, 'vault', 0)
+            args.vault = config.get(secret_profile, 'vault', raw=0)
         if not args.vaultkey:
-            args.vaultkey = config.get(secret_profile, 'vaultkey', 0)
+            args.vaultkey = config.get(secret_profile, 'vaultkey', raw=0)
         if not args.region:
-            args.region = config.get(secret_profile, 'region', 0)
+            args.region = config.get(secret_profile, 'region', raw=0)
 
     if not all([args.vault]):
         sys.exit("Vault configuration undefined: --vault, --vaultkey")

@@ -1,3 +1,4 @@
+# encoding=utf8
 import unittest
 import os, sys
 
@@ -81,6 +82,44 @@ class TestSecret(unittest.TestCase):
         sys.argv.append('key')
         with capture(run_runner) as output:
             self.assertEquals(output, 'Success! Deleted: {}/default/key\n'.format(self.project_name()))
+
+    def test_put_key_value_nonascii(self):
+        sys.argv.append('put')
+        sys.argv.append('key')
+        sys.argv.append('val%€')
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'Success! Wrote: {}/default/key\n'.format(self.project_name()))
+
+        del sys.argv[1:]
+        sys.argv.append('get')
+        sys.argv.append('key')
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'val%€\n')
+
+        del sys.argv[1:]
+        sys.argv.append('delete')
+        sys.argv.append('key')
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'Success! Deleted: {}/default/key\n'.format(self.project_name()))
+
+    def test_put_key_file_nonascii(self):
+        sys.argv.append('put')
+        sys.argv.append('keyfile')
+        sys.argv.append(os.path.join(datadir(), 'upload_nonascii.txt'))
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'Success! Wrote: {}/default/keyfile\n'.format(self.project_name()))
+
+        del sys.argv[1:]
+        sys.argv.append('get')
+        sys.argv.append('keyfile')
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'h€llo Ä ö Å\n')
+
+        del sys.argv[1:]
+        sys.argv.append('delete')
+        sys.argv.append('keyfile')
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'Success! Deleted: {}/default/keyfile\n'.format(self.project_name()))
 
     def test_put_key_file(self):
         sys.argv.append('put')

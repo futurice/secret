@@ -4,10 +4,12 @@ from __future__ import print_function
 import sys, six
 from tabulate import tabulate
 
+ENCODING = 'utf-8'
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
+PY2 = (sys.version_info.major == 2)
 
 class Capturing(list):
     def __enter__(self):
@@ -60,6 +62,8 @@ def prettyprint(result, args):
             fmt_console(result)
 
     pretty = "\n".join(output)
+    if PY2:
+        pretty = pretty.encode(ENCODING)
     if args.output == '':
         print(pretty)
     else:

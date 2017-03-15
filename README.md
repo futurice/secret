@@ -113,3 +113,36 @@ $ secret get --env production
 
 To enable verbose output for commands use ```--debug 1``` argument.
 
+### IAM user permissions policy for generating tokens
+````
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "sts:GetFederationToken",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "dynamodb:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "sqs:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "sns:*",
+      "Resource": "*"
+    }
+  ]
+}
+````

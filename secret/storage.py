@@ -94,10 +94,19 @@ class S3(Storage):
         is_file = False
         is_binary = False # TODO: --binary
         mode = 'rb'
+
+        # TODO --encode flag to encode value
         if os.path.isfile(value):
-            value = codecs.open(os.path.expandvars(os.path.expanduser(value)), mode=mode, encoding=ENCODING).read().rstrip('\n')
+            kwargs = dict(mode=mode)
+            if PY3:
+                kwargs = dict(mode=mode, encoding=ENCODING)
+            value = codecs.open(os.path.expandvars(os.path.expanduser(value)), **kwargs).read().rstrip('\n')
             is_file = True
-        value = value.encode(ENCODING)
+
+        if PY3:
+            value = value.encode(ENCODING)
+
+        # boto expects bytestrings
         data = self.vault.encrypt(value, is_file=is_file, is_binary=is_binary)
         data['name'] = key
         result = yield From(self.put_backend(Bucket=self.bucket, Key=key, Body=json.dumps(data)))

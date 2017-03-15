@@ -9,7 +9,7 @@ from secret.project import get_project
 from secret.templates import statusT, helpT
 
 DATAFILE = '.secret'
-ALIASES = {'ls':'list','rm':'delete'}
+ALIASES = {'ls':'list','rm':'delete','set':'put',}
 
 def print_status(args):
     aws_profile = bool(os.getenv("AWS_PROFILE"))

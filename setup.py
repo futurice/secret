@@ -18,13 +18,13 @@ class TestCommand(Command):
         raise SystemExit(
             subprocess.call(['py.test',]))
 
-install_requires=['boto3>=0.0.18', 'pycryptodome>=3.1','tabulate>=0.7.5','pytest>=2.8.5', 'six']
+install_requires=['boto3>=1.2.3', 'pycryptodome>=3.1','tabulate>=0.7.5','pytest>=2.8.5', 'six']
 if sys.version_info.major == 2:
     install_requires.append('trollius>=1.0.4')
 
 setup(
     name="secret",
-    version='0.6.12',
+    version='0.7',
     description='Secret is for storing secrets. Backed by Amazon Web Services: IAM for access policies, KMS for encryption keys and S3 for storage',
     keywords = 'secret secrets project vault aws amazon cloud',
     author = 'Jussi Vaihia',

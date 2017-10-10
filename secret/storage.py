@@ -7,6 +7,7 @@ import trollius as asyncio
 from trollius import From, Return
 
 from secret.vault import Kms
+from secret.cli import prepare
 
 BOTO_DEFAULT = ''
 ENCODING = 'utf-8'
@@ -69,16 +70,27 @@ class S3(Storage):
 
     @asyncio.coroutine
     def config(self, key=None, **kw):
+        args = prepare()
         contents = yield From(self.list_backend(prefix=self.prefixify(key)))
         contents = contents.get('Contents', [])
-        kw.setdefault('in_group_check', True)
-        tasks = [self.get(key=obj['Key'], **kw) for obj in contents]
+        kw.setdefault('in_group_check', False)
+        kw.setdefault('no_files', True)
+        tasks = [self._get(key=obj['Key'], **kw) for obj in contents]
         try:
             results = yield From(asyncio.gather(*tasks))
         except ValueError as e:
             raise Return({})
-        keys = [k['Key'].split('/')[-1] for k in contents]
-        raise Return(OrderedDict(zip(keys, results)))
+        result = OrderedDict()
+        project_env = "{}/{}".format(args.project, args.env)
+        for k, v in enumerate(results):
+            if kw.get('in_group_check'): # for grouped keys strip prefixes
+                key_ = contents[k]['Key'].split('/')[-1]
+            else: # otherwise full key
+                key_ = contents[k]['Key'].replace(project_env, '').lstrip('/')
+            if args.skip_files and v['is_file']:
+                continue
+            result[key_] = v['data']
+        raise Return(result)
 
     @asyncio.coroutine
     def put_backend(self, **kw):
@@ -120,7 +132,7 @@ class S3(Storage):
         raise Return(self.client.get_object(**kw))
 
     @asyncio.coroutine
-    def get(self, key, **kw):
+    def _get(self, key, **kw):
         if key is None:
             raise Return("Error! No key provided.")
 
@@ -128,8 +140,22 @@ class S3(Storage):
         extra = {}
         if kw.get('version'):
             extra['VersionId'] = kw.get('version')
+        result = yield From(self.get_backend(Bucket=self.bucket, Key=key, **extra))
+        body = json.loads(result['Body'].read().decode(ENCODING))
+        data = self.vault.decrypt(body)
+        is_binary = body.get('is_binary', False)
+        if not is_binary:
+            data = data.decode(ENCODING)
+
+        if kw.get('no_files') and body.get('is_file'):
+            data = "<FILE>"
+        body["data"] = data
+        raise Return(body)
+
+    @asyncio.coroutine
+    def get(self, key, **kw):
         try:
-            result = yield From(self.get_backend(Bucket=self.bucket, Key=key, **extra))
+            data = yield From(self._get(key, **kw))
         except Exception as e:
             if kw.get('in_group_check', True):
                 # check for grouped keys
@@ -140,12 +166,7 @@ class S3(Storage):
                     result = "Error! The specified key does not exist."
                 raise Return(result)
             raise
-        body = json.loads(result['Body'].read().decode(ENCODING))
-        data = self.vault.decrypt(body)
-        is_binary = body.get('is_binary', False)
-        if not is_binary:
-            data = data.decode(ENCODING)
-        raise Return(data)
+        raise Return(data["data"])
 
     @asyncio.coroutine
     def delete_backend(self, **kw):

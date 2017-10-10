@@ -32,6 +32,7 @@ def prepare():
     p.add_argument("-o","--output", help="Output to console (default) or given filepath", default='')
     p.add_argument("--datafile", default=DATAFILE)
     p.add_argument("--debug", default=None)
+    p.add_argument("--skip-files", action='store_true', default=False)
     if len(sys.argv) == 1:
         sys.exit(p.print_help())
     args = p.parse_args()

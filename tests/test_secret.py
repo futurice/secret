@@ -175,7 +175,11 @@ class TestSecret(unittest.TestCase):
         del sys.argv[1:]
         sys.argv.append('delete')
         sys.argv.append('key')
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'Success! Deleted: {}/default/key\n'.format(self.project_name()))
 
         del sys.argv[1:]
         sys.argv.append('delete')
         sys.argv.append('keyfile')
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'Success! Deleted: {}/default/keyfile\n'.format(self.project_name()))

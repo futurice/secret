@@ -171,3 +171,11 @@ class TestSecret(unittest.TestCase):
         sys.argv.append('--skip-files')
         with capture(run_runner) as output:
             self.assertEquals(output, 'Key  Value\nkey  value\n')
+
+        del sys.argv[1:]
+        sys.argv.append('delete')
+        sys.argv.append('key')
+
+        del sys.argv[1:]
+        sys.argv.append('delete')
+        sys.argv.append('keyfile')

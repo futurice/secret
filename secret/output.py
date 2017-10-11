@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from __future__ import absolute_import
 from __future__ import print_function
-import sys, six
+import sys, six, json
 from tabulate import tabulate
 
 ENCODING = 'utf-8'
@@ -47,6 +47,9 @@ def fmt_docker(result):
         c.append('-e '+k+'="'+v+'"')
     print(" ".join(c), end='')
 
+def fmt_json(result):
+    print(json.dumps(result), end='')
+
 def has_error(result):
     try:
         if result.startswith('Error'):
@@ -58,6 +61,8 @@ def prettyprint(result, args):
     with Capturing() as output:
         if args.fmt == 'docker':
             fmt_docker(result)
+        elif args.fmt == 'json':
+            fmt_json(result)
         else:
             fmt_console(result)
 

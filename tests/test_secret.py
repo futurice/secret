@@ -78,6 +78,13 @@ class TestSecret(unittest.TestCase):
             self.assertEquals(output, '-e key="value"\n')
 
         del sys.argv[1:]
+        sys.argv.append('config')
+        sys.argv.append('-F')
+        sys.argv.append('json')
+        with capture(run_runner) as output:
+            self.assertEquals(output, '{"key": "value"}\n')
+
+        del sys.argv[1:]
         sys.argv.append('delete')
         sys.argv.append('key')
         with capture(run_runner) as output:
@@ -139,3 +146,36 @@ class TestSecret(unittest.TestCase):
         sys.argv.append('keyfile')
         with capture(run_runner) as output:
             self.assertEquals(output, 'Success! Deleted: {}/default/keyfile\n'.format(self.project_name()))
+
+    def test_file_listing(self):
+        sys.argv.append('put')
+        sys.argv.append('key')
+        sys.argv.append('value')
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'Success! Wrote: {}/default/key\n'.format(self.project_name()))
+
+        del sys.argv[1:]
+        sys.argv.append('put')
+        sys.argv.append('keyfile')
+        sys.argv.append(os.path.join(datadir(), 'upload.txt'))
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'Success! Wrote: {}/default/keyfile\n'.format(self.project_name()))
+
+        del sys.argv[1:]
+        sys.argv.append('config')
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'Key      Value\nkey      value\nkeyfile  <FILE>\n')
+
+        del sys.argv[1:]
+        sys.argv.append('config')
+        sys.argv.append('--skip-files')
+        with capture(run_runner) as output:
+            self.assertEquals(output, 'Key  Value\nkey  value\n')
+
+        del sys.argv[1:]
+        sys.argv.append('delete')
+        sys.argv.append('key')
+
+        del sys.argv[1:]
+        sys.argv.append('delete')
+        sys.argv.append('keyfile')

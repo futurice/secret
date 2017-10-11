@@ -18,19 +18,17 @@ Configure AWS credentials for Boto (http://boto.readthedocs.org/en/latest/boto_c
 
 ## Usage
 
-Start by creating a new project: ```--vault``` is the S3 bucket name,
-```--vaultkey``` the KMS key and ```--project``` a destination "folder" (created for you) in the S3 bucket:
-```
-$ secret setup --vault secret --vaultkey alias/secret --region us-east-1 --project helloworld
-```
-The project configuration is stored in .secret to avoid typing required arguments on every command.
-
-Global configuration can be stored to `~/.secret/credentials`, for example:
+Add global configuration to `~/.secret/credentials`, for example:
 ```bash
 [default]
+# vault=S3 bucket name
+# vaultkey=KMS encryption key handle
 vault=secret
 vaultkey=alias/secret
+region=eu-central-1
 ```
+
+Add any configuration overrides in .secret, eg. `{"project":"my-only-project"}` to not need to specify `-P my-only-project`.
 
 ## Commands
 
@@ -39,7 +37,7 @@ $ secret
 <CLI instructions>
 
 $ secret list
-
+(empty)
 
 $ secret put hello world
 Success! Wrote: secret/default/hello
@@ -113,36 +111,30 @@ $ secret get --env production
 
 To enable verbose output for commands use ```--debug 1``` argument.
 
-### IAM user permissions policy for generating tokens
-````
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:GetFederationToken",
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": "dynamodb:*",
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": "sqs:*",
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": "s3:*",
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": "sns:*",
-      "Resource": "*"
-    }
-  ]
-}
-````
+### Development
+
+Setup a local development environment for Secret:
+```
+virtualenv py2venv --python=python2
+source py2venv/bin/activate
+pip install -r requirements.txt
+pip install pytest
+mkdir -p ~/.secret/credentials
+echo """
+[default]
+vault=secret
+vaultkey=alias/secret
+region=eu-central-1
+""" > $HOME/.secret/credentials
+export AWS_PROFILE=default
+```
+
+Client usage:
+```
+./venvcmd ls
+```
+
+Run tests:
+```
+py.test
+```
